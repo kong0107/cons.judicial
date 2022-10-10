@@ -1,9 +1,9 @@
 {
   "name": "cons.judicial",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "憲法法庭裁判",
   "type": "module",
-  "main": "index.js",
+  "main": "main.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kong0107/cons.judicial.git"
