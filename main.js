@@ -23,9 +23,14 @@ for(let url of [
         const source = `./source/${fid}/${id}.html`;
         const type = (fid == '38') ? '判決' : '實體裁定';
         const target = `./data/${type}/${year}/${word}${number}.json`;
-        await download('https://cons.judicial.gov.tw' + anchor.href, source);
 
+        try {
+            await fs.access(source, fs.constants.R_OK);
+        } catch(err) {
+            await download('https://cons.judicial.gov.tw' + anchor.href, source);
+        }
         const html = await fs.readFile(source);
+
         const document = (new JSDOM(html)).window.document;
         const data = {id, '類型': type};
         document.querySelectorAll(".lawList > ul > li:last-of-type").forEach(item => {
@@ -74,7 +79,7 @@ for(let url of [
         const brief = {
             id,
             '類型': type,
-            '字號': data['裁定字號'] || data['判決字號'],
+            '字號': (data['裁定字號'] || data['判決字號']).replaceAll(/[年字第號]/g, ''),
             '日期': data['裁定日期'] || data['判決日期'],
             '案由': data['案由']
         };
