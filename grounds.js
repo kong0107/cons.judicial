@@ -19,7 +19,6 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
         const id = (new URLSearchParams(anchor.href)).get('id');
         const [, year, word, number] = anchor.textContent.match(/^(\d+)年(.+)字第(\d+)號(\(|$)/); // exception: 339927
         const source = `./source/40/${id}.html`;
-        const target = `./data/程序裁定/${year}/${word}${number}.json`;
 
         try {
             await fs.access(source, fs.constants.R_OK);
@@ -39,16 +38,16 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
         summary.push({
             id,
             '日期': data['裁定日期'],
-            '字號': (data['裁定字號'] || data['原分案號']).replaceAll(/[年字第號]/g, ''), // exception: 339927
+            '字號': (data['裁定字號'] || data['原分案號']).replaceAll(/[年度字第號]/g, ''), // exception: 339927
         });
-        await fs.mkdir(`./data/程序裁定/${year}`, {recursive: true});
-        await fs.writeFile(target, JSON.stringify(data, null, '\t'));
+        await fs.mkdir(`./docket/${year}/${word}/`, {recursive: true});
+        await fs.writeFile(`./docket/${year}/${word}/${number}.json`, JSON.stringify(data, null, '\t'));
         if(!(++counter % 50)) process.stdout.write('.');
     }
     href = document.querySelector('[id$=paging_next]')?.href;
 }
 process.stdout.write('\n');
 
-await fs.writeFile('./data/程序裁定/index.csv', toCSV(
+await fs.writeFile('./docket/程序裁定.csv', toCSV(
     summary, ['id', '日期', '字號']
 ));

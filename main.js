@@ -24,7 +24,7 @@ for(let url of [
         const id = (new URLSearchParams(anchor.href)).get('id');
         const [, year, word, number] = anchor.textContent.match(/^(\d+)年(.+)字第(\d+)號[(【]/);
         const source = `./source/${fid}/${id}.html`;
-        const target = `./data/${type}/${year}/${word}${number}.json`;
+        const target = `./docket/${year}/${word}/${number}.json`;
 
         try {
             await fs.access(source, fs.constants.R_OK);
@@ -47,22 +47,22 @@ for(let url of [
         };
         if(data['標題']) brief['標題'] = data['標題'];
         summary.push(brief);
-        await fs.mkdir(`./data/${type}/${year}`, {recursive: true});
+        await fs.mkdir(`./docket/${year}/${word}/`, {recursive: true});
         await fs.writeFile(target, JSON.stringify(data, null, '\t'));
     }
 }
 
-await fs.writeFile('./data/index.csv', toCSV(
+await fs.writeFile('./docket/index.csv', toCSV(
     summary,
     ['id', '日期', '字號', '類型']
 ));
 
-await fs.writeFile(`./data/判決/index.csv`, toCSV(
+await fs.writeFile(`./docket/判決.csv`, toCSV(
     summary.filter(d => d['類型'] === '判決'),
     ['id', '日期', '字號', '標題']
 ));
 
-await fs.writeFile(`./data/實體裁定/index.csv`, toCSV(
+await fs.writeFile(`./docket/實體裁定.csv`, toCSV(
     summary.filter(d => d['類型'] === '實體裁定'),
     ['id', '日期', '字號', '案由']
 ));
