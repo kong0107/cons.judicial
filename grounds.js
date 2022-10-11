@@ -1,0 +1,54 @@
+import * as fs from 'node:fs/promises';
+import { JSDOM } from 'jsdom';
+import download from './lib/download.mjs';
+import parseTable from './lib/parseTable.mjs';
+import toCSV from './lib/toCSV.mjs';
+
+await fs.mkdir('./source/40', {recursive: true});
+const summary = [];
+
+for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
+    const filepath = './source/' + encodeURIComponent(href.split('/').pop()) + '.html';
+    await download('https://cons.judicial.gov.tw' + href, filepath);
+
+    const html = await fs.readFile(filepath);
+    const document = (new JSDOM(html)).window.document;
+    const anchors = document.querySelectorAll('[href^="/docdata.aspx?fid=40&id="]');
+
+    for(let anchor of anchors) {
+        const id = (new URLSearchParams(anchor.href)).get('id');
+        const [, year, word, number] = anchor.textContent.match(/^(\d+)年(.+)字第(\d+)號(\(|$)/); // exception: 339927
+        const source = `./source/40/${id}.html`;
+        const target = `./data/程序裁定/${year}/${word}${number}.json`;
+
+        try {
+            await fs.access(source, fs.constants.R_OK);
+        } catch(err) {
+            await new Promise(r => setTimeout(r, 1000));
+            await download('https://cons.judicial.gov.tw' + anchor.href, source);
+        }
+        // console.log('Parsing', source);
+        const html = await fs.readFile(source);
+
+        const document = (new JSDOM(html)).window.document;
+        const data = Object.assign(
+            {id, '類型': '程序裁定'},
+            parseTable(document)
+        );
+
+        summary.push({
+            id,
+            '日期': data['裁定日期'],
+            '字號': (data['裁定字號'] || data['原分案號']).replaceAll(/[年字第號]/g, ''), // exception: 339927
+        });
+        await fs.mkdir(`./data/程序裁定/${year}`, {recursive: true});
+        await fs.writeFile(target, JSON.stringify(data, null, '\t'));
+        if(!(++counter % 50)) process.stdout.write('.');
+    }
+    href = document.querySelector('[id$=paging_next]')?.href;
+}
+process.stdout.write('\n');
+
+await fs.writeFile('./data/程序裁定/index.csv', toCSV(
+    summary, ['id', '日期', '字號']
+));
