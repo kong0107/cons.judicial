@@ -17,7 +17,7 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
 
     for(let anchor of anchors) {
         const id = (new URLSearchParams(anchor.href)).get('id');
-        const [, year, word, number] = anchor.textContent.match(/^(\d+)年(.+)字第(\d+)號(\(|$)/); // exception: 339927
+        const [, year, word, number] = anchor.textContent.match(/^(\d+)年度?(.+)字第(\d+)號(\(|$)/); // exception: 339927
         const source = `./source/40/${id}.html`;
 
         try {

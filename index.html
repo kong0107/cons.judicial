@@ -94,7 +94,6 @@ function main() {
         }
         return false;
     });
-    console.log(showing);
 
     const words = [...(new Set(showing.map(record => record.word)))];
     $('nav').textContent = '';
@@ -122,6 +121,7 @@ function main() {
             {td: {$: [
                 {a: {
                     href,
+                    title: '憲法法庭網站',
                     target: '_blank',
                     $: [{i: {class: 'bi bi-box-arrow-up-right'}}]
                 }}
@@ -130,7 +130,6 @@ function main() {
         $('tbody').append(createElement(jsml));
     });
 }
-
     </script>
 </body>
 </html>
