@@ -15,6 +15,7 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
     const document = (new JSDOM(html)).window.document;
     const anchors = document.querySelectorAll('[href^="/docdata.aspx?fid=40&id="]');
 
+    let hasNew = false;
     for(let anchor of anchors) {
         const id = (new URLSearchParams(anchor.href)).get('id');
         const [, year, word, number] = anchor.textContent.match(/^(\d+)年度?(.+)字第(\d+)號(\(|$)/); // exception: 339927
@@ -25,6 +26,7 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
         } catch(err) {
             await new Promise(r => setTimeout(r, 1000));
             await download('https://cons.judicial.gov.tw' + anchor.href, source);
+            hasNew = true;
         }
         // console.log('Parsing', source);
         const html = await fs.readFile(source);
@@ -43,6 +45,10 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
         await fs.mkdir(`./docket/${year}/${word}/`, {recursive: true});
         await fs.writeFile(`./docket/${year}/${word}/${number}.json`, JSON.stringify(data, null, '\t'));
         if(!(++counter % 50)) process.stdout.write('.');
+    }
+    if(!hasNew) {
+        process.stdout.write('\nIt seems there is no new decisions.');
+        break;
     }
     href = document.querySelector('[id$=paging_next]')?.href;
 }
