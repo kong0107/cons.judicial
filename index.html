@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>憲法法庭裁判</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/kong-util/dist/all.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/kong-util@0.6.8/dist/all.js"></script>
     <style>
         td:not(:nth-of-type(4)) {
             white-space: nowrap;
@@ -97,37 +97,39 @@ function main() {
 
     const words = [...(new Set(showing.map(record => record.word)))];
     $('nav').textContent = '';
-    $('nav').append(...words.map(word => createElement(
-        {span: {
-            class: 'nav-link',
-            role: 'button',
-            text: word,
-            onclick: () => {
-                $('#search').value = word;
-                main();
-            }
-        }}
+    $('nav').append(...words.map(word => createElementFromJsonML(
+        ['span', {
+                class: 'nav-link',
+                role: 'button',
+                onclick: () => {
+                    $('#search').value = word;
+                    main();
+                }
+            },
+            word
+        ]
     )));
 
     $('tbody').textContent = '';
     showing.forEach(record => {
         const fid = (record['type'] === '判決') ? 38 : (record['type'] === '實體裁定' ? 39 : 40);
         const href = `https://cons.judicial.gov.tw/docdata.aspx?fid=${fid}&id=${record['id']}`;
-        const jsml = {tr: {$: [
-            {td: record['類型']},
-            {td: record['字號']},
-            {td: record['日期']},
-            {td: record['案由'] || record['標題']},
-            {td: {$: [
-                {a: {
-                    href,
-                    title: '憲法法庭網站',
-                    target: '_blank',
-                    $: [{i: {class: 'bi bi-box-arrow-up-right'}}]
-                }}
-            ]}}
-        ]}};
-        $('tbody').append(createElement(jsml));
+        const jsonml = ['tr', {},
+            ['td', {}, record['類型']],
+            ['td', {}, record['字號']],
+            ['td', {}, record['日期']],
+            ['td', {}, record['案由'] || record['標題']],
+            ['td', {},
+                ['a', {
+                        href,
+                        title: '憲法法庭網站',
+                        target: '_blank',
+                    },
+                    ['i', {class: 'bi bi-box-arrow-up-right'}]
+                ]
+            ],
+        ];
+        $('tbody').append(createElementFromJsonML(jsonml));
     });
 }
     </script>
