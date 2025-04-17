@@ -5,7 +5,7 @@ import parseTable from './lib/parseTable.mjs';
 import toCSV from './lib/toCSV.mjs';
 
 const summary = [];
-for(let url of [
+for (let url of [
     'https://cons.judicial.gov.tw/judcurrentNew1.aspx?fid=38',
     'https://cons.judicial.gov.tw/judcurrentNew2.aspx?fid=39'
 ]) {
@@ -20,7 +20,7 @@ for(let url of [
     const document = (new JSDOM(html)).window.document;
     const anchors = document.querySelectorAll(`.judgmentListTb [href^="/docdata.aspx?fid=${fid}&id="]`);
 
-    for(let anchor of anchors) {
+    for (let anchor of anchors) {
         const id = (new URLSearchParams(anchor.href)).get('id');
         const [, year, word, number] = anchor.textContent.match(/^(\d+)年(.+)字第(\d+)號[(【]/);
         const source = `./source/${fid}/${id}.html`;
@@ -28,7 +28,8 @@ for(let url of [
 
         try {
             await fs.access(source, fs.constants.R_OK);
-        } catch(err) {
+        }
+        catch {
             await download('https://cons.judicial.gov.tw' + anchor.href, source);
         }
         const html = await fs.readFile(source);
@@ -45,10 +46,19 @@ for(let url of [
             '日期': data['裁定日期'] || data['判決日期'],
             '案由': data['案由']
         };
-        if(data['標題']) brief['標題'] = data['標題'];
+        if (data['標題']) brief['標題'] = data['標題'];
         summary.push(brief);
         await fs.mkdir(`./docket/${year}/${word}/`, {recursive: true});
-        await fs.writeFile(target, JSON.stringify(data, null, '\t'));
+
+        const json = JSON.stringify(data, null, '\t');
+        try {
+            await fs.access(target, fs.constants.R_OK);
+            if (json !== await fs.readFile(target, {encoding: 'utf8'}))
+                throw new Error('go to catch');
+        }
+        catch {
+            await fs.writeFile(target, json);
+        }
     }
 }
 

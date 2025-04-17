@@ -8,9 +8,9 @@ await fs.mkdir('./source/40', {recursive: true});
 const summary = [];
 
 let hasNew;
-for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
+for (let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
     const filepath = './source/' + encodeURIComponent(href.split('/').pop()) + '.html';
-    if(!counter || hasNew)
+    if (! counter || hasNew)
         await download('https://cons.judicial.gov.tw' + href, filepath);
 
     const html = await fs.readFile(filepath);
@@ -18,15 +18,16 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
     const anchors = document.querySelectorAll('[href^="/docdata.aspx?fid=40&id="]');
 
     hasNew = false;
-    for(let anchor of anchors) {
+    for (let anchor of anchors) {
         const id = (new URLSearchParams(anchor.href)).get('id');
         const [, year, word, number] = anchor.textContent.match(/^(\d+)年度?(.+)字第(\d+)號(\(|$)/); // exception: 339927
         const source = `./source/40/${id}.html`;
 
         try {
             await fs.access(source, fs.constants.R_OK);
-        } catch(err) {
-            await new Promise(r => setTimeout(r, 1000));
+        }
+        catch {
+            await new Promise(r => setTimeout(r, 250));
             await download('https://cons.judicial.gov.tw' + anchor.href, source);
             hasNew = true;
         }
@@ -44,9 +45,20 @@ for(let href = '/docdata.aspx?fid=40&page=1', counter = 0; href;) {
             '日期': data['裁定日期'],
             '字號': (data['裁定字號'] || data['原分案號']).replaceAll(/[年度字第號]/g, ''), // exception: 339927
         });
-        await fs.mkdir(`./docket/${year}/${word}/`, {recursive: true});
-        await fs.writeFile(`./docket/${year}/${word}/${number}.json`, JSON.stringify(data, null, '\t'));
-        if(!(++counter % 50)) process.stdout.write('.');
+        const dirpath = `./docket/${year}/${word}/`;
+        await fs.mkdir(dirpath, {recursive: true});
+
+        const target = `${dirpath}${number}.json`;
+        const json = JSON.stringify(data, null, '\t');
+        try {
+            await fs.access(target, fs.constants.R_OK);
+            if (json !== await fs.readFile(target, {encoding: 'utf8'}))
+                throw new Error('go to catch');
+        }
+        catch {
+            await fs.writeFile(target, json);
+        }
+        if (! (++counter % 50)) process.stdout.write('.');
     }
     href = document.querySelector('[id$=paging_next]')?.href;
 }
